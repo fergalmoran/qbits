@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "QBits",
+  "version": "1.0.0",
+  "description": "Monitor your qbitorrents",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    },
+    "default_title": "QBits Settings"
+  },
+  "permissions": [
+    "contextMenus",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "index.html"
+}
