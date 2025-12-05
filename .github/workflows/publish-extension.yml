@@ -1,0 +1,162 @@
+name: Build and Publish Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish_chrome:
+        description: 'Publish to Chrome Web Store'
+        required: false
+        default: true
+        type: boolean
+      publish_firefox:
+        description: 'Publish to Firefox Add-ons'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Get version from manifest
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' public/manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build extension
+        run: bun run build
+
+      - name: Copy manifest and assets to dist
+        run: |
+          cp public/manifest.json dist/
+          cp public/*.png dist/ 2>/dev/null || true
+
+      - name: Create Chrome extension zip
+        run: |
+          cd dist
+          zip -r ../qbits-chrome-v${{ steps.version.outputs.version }}.zip .
+
+      - name: Create Firefox manifest (Manifest V2 compatibility)
+        run: |
+          # Create Firefox-compatible manifest
+          jq '
+            .manifest_version = 2 |
+            .browser_specific_settings = {
+              "gecko": {
+                "id": "qbits@extension",
+                "strict_min_version": "109.0"
+              }
+            } |
+            # Convert service_worker to background scripts for MV2
+            .background = {"scripts": ["background.js"], "type": "module"} |
+            # Convert action to browser_action for MV2
+            .browser_action = .action |
+            del(.action) |
+            # Convert host_permissions to permissions for MV2
+            .permissions = (.permissions + .host_permissions) |
+            del(.host_permissions) |
+            # Remove declarativeNetRequestWithHostAccess as it is MV3 only
+            .permissions = [.permissions[] | select(. != "declarativeNetRequestWithHostAccess")]
+          ' dist/manifest.json > dist/manifest-firefox.json
+          mv dist/manifest-firefox.json dist/manifest.json
+
+      - name: Create Firefox extension zip
+        run: |
+          cd dist
+          zip -r ../qbits-firefox-v${{ steps.version.outputs.version }}.zip .
+
+      - name: Restore Chrome manifest for artifact
+        run: |
+          cp public/manifest.json dist/
+
+      - name: Upload Chrome extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension
+          path: qbits-chrome-v${{ steps.version.outputs.version }}.zip
+
+      - name: Upload Firefox extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-extension
+          path: qbits-firefox-v${{ steps.version.outputs.version }}.zip
+
+  publish-chrome:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.publish_chrome == 'true'
+    steps:
+      - name: Download Chrome extension artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: chrome-extension
+
+      - name: Publish to Chrome Web Store
+        uses: mobilefirstllc/cws-publish@latest
+        with:
+          action: publish
+          client_id: ${{ secrets.CHROME_CLIENT_ID }}
+          client_secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh_token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          extension_id: ${{ secrets.CHROME_EXTENSION_ID }}
+          zip_file: qbits-chrome-v${{ needs.build.outputs.version }}.zip
+
+  publish-firefox:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.publish_firefox == 'true'
+    steps:
+      - name: Download Firefox extension artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: firefox-extension
+
+      - name: Publish to Firefox Add-ons
+        uses: browser-actions/release-firefox-addon@latest
+        with:
+          addon-id: ${{ secrets.FIREFOX_ADDON_ID }}
+          addon-path: qbits-firefox-v${{ needs.build.outputs.version }}.zip
+          auth-api-issuer: ${{ secrets.FIREFOX_API_ISSUER }}
+          auth-api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+
+  create-release:
+    needs: [build, publish-chrome, publish-firefox]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Chrome extension artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: chrome-extension
+
+      - name: Download Firefox extension artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: firefox-extension
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            qbits-chrome-v${{ needs.build.outputs.version }}.zip
+            qbits-firefox-v${{ needs.build.outputs.version }}.zip
+          generate_release_notes: true
