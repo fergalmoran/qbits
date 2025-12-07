@@ -94,7 +94,6 @@ increment_version() {
     local new_version="${major}.${minor}.${patch}"
     
     # Update manifest.json
-    log_info "Updating version: $current_version -> $new_version"
     jq --arg v "$new_version" '.version = $v' "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp"
     mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
     
