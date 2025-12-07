@@ -9,6 +9,10 @@
     "build:chrome": "./scripts/build.sh chrome",
     "build:firefox": "./scripts/build.sh firefox",
     "build:all": "./scripts/build.sh all",
+    "release": "./scripts/build.sh release",
+    "release:patch": "./scripts/build.sh release patch",
+    "release:minor": "./scripts/build.sh release minor",
+    "release:major": "./scripts/build.sh release major",
     "lint": "eslint .",
     "preview": "vite preview"
   },

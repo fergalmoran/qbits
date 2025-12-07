@@ -1,13 +1,14 @@
-# React Chrome Extension
+# qBits
 
-This is a Chrome Extension built with React, Vite, and Bun.
+A browser extension for monitoring your qBittorrent client. Supports both Chrome and Firefox.
 
 ## Features
 
-- **React-based Settings UI**: A modern settings page using React.
-- **Context Menu**: Adds a "Open Extension Settings" item to the right-click menu.
-- **Storage Persistence**: Saves settings using `chrome.storage.sync`.
-- **Dark Mode**: Built-in dark mode support.
+- **Quick Torrent Overview**: View all your torrents at a glance from the browser toolbar popup
+- **Real-time Monitoring**: See download/upload progress with auto-refreshing status
+- **Torrent Management**: Pause, resume, and delete torrents directly from the extension
+- **Filter by Status**: Quickly filter torrents by all, downloading, seeding, or completed
+- **Easy Setup**: Simple configuration to connect to your qBittorrent Web UI
 
 ## Development
 
@@ -26,7 +27,14 @@ This is a Chrome Extension built with React, Vite, and Bun.
 2. Build the extension:
 
    ```bash
-   bun run build
+   bun run build:all
+   ```
+
+   Or build for a specific browser:
+
+   ```bash
+   bun run build:chrome
+   bun run build:firefox
    ```
 
 ### Loading into Chrome
@@ -35,6 +43,30 @@ This is a Chrome Extension built with React, Vite, and Bun.
 2. Enable **Developer mode** (top right).
 3. Click **Load unpacked**.
 4. Select the `dist` folder in this project directory.
+
+### Loading into Firefox
+
+1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on**.
+3. Select any file in the `dist` folder (e.g., `manifest.json`).
+
+## Releasing
+
+To create a new release:
+
+```bash
+bun run release           # Patch version bump (1.0.0 → 1.0.1)
+bun run release:minor     # Minor version bump (1.0.0 → 1.1.0)
+bun run release:major     # Major version bump (1.0.0 → 2.0.0)
+```
+
+Then push to trigger the GitHub release:
+
+```bash
+git push && git push --tags
+```
+
+The GitHub release will include both Chrome and Firefox extension zips as downloadable assets.
 
 ## Publishing
 
@@ -66,8 +98,8 @@ Configure these secrets in your repository settings (Settings → Secrets and va
 4. Add `https://developers.google.com/oauthplayground` as an authorized redirect URI
 5. Use the [OAuth Playground](https://developers.google.com/oauthplayground/) to get a refresh token:
    - Click the gear icon → Enable "Use your own OAuth credentials"
-   - Enter your Client ID and Secret
-   - Authorize the `https://www.googleapis.com/auth/chromewebstore` scope
+   - Enter your Client Ihttps://www.googleapis.com/auth/chromewebstoreD and Secret
+   - Authorize the `` scope
    - Exchange the authorization code for a refresh token
 
 #### Firefox Add-ons
