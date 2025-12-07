@@ -36,13 +36,6 @@ This is a Chrome Extension built with React, Vite, and Bun.
 3. Click **Load unpacked**.
 4. Select the `dist` folder in this project directory.
 
-## Project Structure
-
-- `src/App.jsx`: The Settings UI component.
-- `src/background.js`: Background service worker (Context Menu logic).
-- `public/manifest.json`: Extension manifest.
-- `vite.config.js`: Build configuration for multiple entry points.
-
 ## Publishing
 
 The extension can be automatically published to Chrome Web Store and Firefox Add-ons using GitHub Actions.
@@ -69,8 +62,13 @@ Configure these secrets in your repository settings (Settings → Secrets and va
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project and enable the Chrome Web Store API
-3. Create OAuth 2.0 credentials (Desktop App type)
-4. Use the [Chrome Web Store API OAuth guide](https://developer.chrome.com/docs/webstore/using-api/) to get a refresh token
+3. Create OAuth 2.0 credentials (select "Web application" type)
+4. Add `https://developers.google.com/oauthplayground` as an authorized redirect URI
+5. Use the [OAuth Playground](https://developers.google.com/oauthplayground/) to get a refresh token:
+   - Click the gear icon → Enable "Use your own OAuth credentials"
+   - Enter your Client ID and Secret
+   - Authorize the `https://www.googleapis.com/auth/chromewebstore` scope
+   - Exchange the authorization code for a refresh token
 
 #### Firefox Add-ons
 

@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
+    "build:chrome": "./scripts/build.sh chrome",
+    "build:firefox": "./scripts/build.sh firefox",
+    "build:all": "./scripts/build.sh all",
     "lint": "eslint .",
     "preview": "vite preview"
   },

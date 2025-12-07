@@ -51,19 +51,42 @@ async function handleLogin(payload: APIPayload): Promise<APIResponse<string>> {
   const { serverUrl, username, password } = payload;
 
   try {
+    // Don't include credentials on login - this prevents reusing an existing session
+    // and ensures we're actually validating the provided username/password
     const response = await fetch(`${serverUrl}/api/v2/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      credentials: "include",
-      body: `username=${username}&password=${password}`,
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      body: `username=${encodeURIComponent(username ?? "")}&password=${encodeURIComponent(password ?? "")}`,
     });
 
     const responseText = await response.text();
+    
+    // qBittorrent API quirk: login always returns 200
+    // Success is indicated by:
+    // 1. Response body is "Ok."
+    // 2. Set-Cookie header contains SID
+    // We check the response body since we can't reliably access Set-Cookie
+    const loginSuccess = responseText === "Ok.";
+
+    if (loginSuccess) {
+      // Make another request WITH credentials to establish the session cookie
+      await fetch(`${serverUrl}/api/v2/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        credentials: "include",
+        referrerPolicy: "no-referrer",
+        body: `username=${encodeURIComponent(username ?? "")}&password=${encodeURIComponent(password ?? "")}`,
+      });
+    }
 
     return {
-      ok: response.ok,
+      ok: loginSuccess,
       status: response.status,
       body: responseText,
     };

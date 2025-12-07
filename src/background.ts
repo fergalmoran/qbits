@@ -1,5 +1,40 @@
 import { handleQBittorrentAPI } from "./api";
 
+// Set up declarativeNetRequest rules to remove Origin header for qBittorrent API calls
+function setupDeclarativeNetRequestRules() {
+  chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [1],
+    addRules: [
+      {
+        id: 1,
+        priority: 1,
+        action: {
+          type: "modifyHeaders" as chrome.declarativeNetRequest.RuleActionType,
+          requestHeaders: [
+            {
+              header: "Origin",
+              operation: "remove" as chrome.declarativeNetRequest.HeaderOperation,
+            },
+          ],
+        },
+        condition: {
+          urlFilter: "*/api/v2/*",
+          resourceTypes: [
+            "xmlhttprequest" as chrome.declarativeNetRequest.ResourceType,
+          ],
+        },
+      },
+    ],
+  }).then(() => {
+    console.log("declarativeNetRequest rules set up successfully");
+  }).catch((error) => {
+    console.error("Failed to set up declarativeNetRequest rules:", error);
+  });
+}
+
+// Set up rules immediately when service worker starts
+setupDeclarativeNetRequestRules();
+
 // Update badge with current download count
 async function updateBadge() {
   try {
@@ -49,38 +84,15 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["link"]
   });
 
-  // Set up declarativeNetRequest rules to remove Origin header for qBittorrent API calls
-  chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [1],
-    addRules: [
-      {
-        id: 1,
-        priority: 1,
-        action: {
-          type: "modifyHeaders" as chrome.declarativeNetRequest.RuleActionType,
-          requestHeaders: [
-            {
-              header: "Origin",
-              operation: "remove" as chrome.declarativeNetRequest.HeaderOperation,
-            },
-          ],
-        },
-        condition: {
-          urlFilter: "*/api/v2/*",
-          resourceTypes: [
-            "xmlhttprequest" as chrome.declarativeNetRequest.ResourceType,
-          ],
-        },
-      },
-    ],
-  });
+  // Set up declarativeNetRequest rules
+  setupDeclarativeNetRequestRules();
 
   // Start badge update interval
   updateBadge();
   setInterval(updateBadge, 5000); // Update every 5 seconds
 });
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, _tab) => {
   if (info.menuItemId === "sendToQBittorrent" && info.linkUrl) {
     try {
       // Load settings from storage
@@ -126,7 +138,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 // Handle API requests from the popup/options page
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "qbittorrent-api") {
     handleQBittorrentAPI(message.payload)
       .then(sendResponse)

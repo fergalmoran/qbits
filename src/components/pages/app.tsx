@@ -20,12 +20,7 @@ interface Alert {
 }
 
 function App() {
-  const [settings, setSettings] = useState<Settings>({
-    serverUrl: "https://qb.fergl.ie",
-    username: "qbittorrent",
-    password: "Gen2oPia",
-    notifications: true,
-  });
+  const [settings, setSettings] = useState<Settings>();
 
   const [alert, setAlert] = useState<Alert | null>(null);
 
@@ -45,23 +40,18 @@ function App() {
     setTimeout(() => setAlert(null), 5000);
   };
 
-  const handleSave = () => {
-    if (typeof chrome !== "undefined" && chrome.storage) {
-      chrome.storage.sync.set({ settings }, () => {
-        showAlert("success", "Settings saved successfully!");
-      });
-    } else {
-      showAlert("info", "Settings saved! (Mock mode)");
-    }
-  };
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleTest = async () => {
+  const handleSave = async () => {
     if (!settings.serverUrl || !settings.username || !settings.password) {
       showAlert("error", "Please fill in all connection details");
       return;
     }
 
+    setIsSaving(true);
+
     try {
+      // Test connection first
       const api = new QBittorrentAPI({
         serverUrl: settings.serverUrl,
         username: settings.username,
@@ -70,14 +60,23 @@ function App() {
 
       const response = await api.login();
 
-      console.log("Response:", response);
-
       if (response.error) {
         showAlert("error", `Connection failed: ${response.error}`);
-      } else if (response.ok) {
-        showAlert("success", "Connection successful!");
-      } else {
+        return;
+      }
+      
+      if (!response.ok) {
         showAlert("error", `Connection failed: ${response.status} - ${response.body}`);
+        return;
+      }
+
+      // Connection successful, save settings
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        chrome.storage.sync.set({ settings }, () => {
+          showAlert("success", "Connection verified and settings saved!");
+        });
+      } else {
+        showAlert("info", "Connection verified! Settings saved (Mock mode)");
       }
     } catch (error) {
       console.error("Connection error:", error);
@@ -87,6 +86,8 @@ function App() {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -161,14 +162,19 @@ function App() {
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button onClick={handleTest} variant="outline" className="flex-1">
-              <Plug className="mr-2 h-4 w-4" />
-              Test
-            </Button>
-            <Button onClick={handleSave} className="flex-1">
-              <Check className="mr-2 h-4 w-4" />
-              Save
+          <div className="pt-4">
+            <Button onClick={handleSave} className="w-full" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Plug className="mr-2 h-4 w-4 animate-pulse" />
+                  Testing connection...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
             </Button>
           </div>
 

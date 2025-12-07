@@ -43,48 +43,28 @@ jobs:
       - name: Build extension
         run: bun run build
 
-      - name: Copy manifest and assets to dist
+      - name: Copy base assets to dist
         run: |
-          cp public/manifest.json dist/
           cp public/*.png dist/ 2>/dev/null || true
 
       - name: Create Chrome extension zip
         run: |
+          # Create Chrome-specific manifest (uses service_worker)
+          jq '
+            del(.browser_specific_settings) |
+            .background = {"service_worker": "background.js", "type": "module"}
+          ' public/manifest.json > dist/manifest.json
           cd dist
           zip -r ../qbits-chrome-v${{ steps.version.outputs.version }}.zip .
 
-      - name: Create Firefox manifest (Manifest V2 compatibility)
-        run: |
-          # Create Firefox-compatible manifest
-          jq '
-            .manifest_version = 2 |
-            .browser_specific_settings = {
-              "gecko": {
-                "id": "qbits@extension",
-                "strict_min_version": "109.0"
-              }
-            } |
-            # Convert service_worker to background scripts for MV2
-            .background = {"scripts": ["background.js"], "type": "module"} |
-            # Convert action to browser_action for MV2
-            .browser_action = .action |
-            del(.action) |
-            # Convert host_permissions to permissions for MV2
-            .permissions = (.permissions + .host_permissions) |
-            del(.host_permissions) |
-            # Remove declarativeNetRequestWithHostAccess as it is MV3 only
-            .permissions = [.permissions[] | select(. != "declarativeNetRequestWithHostAccess")]
-          ' dist/manifest.json > dist/manifest-firefox.json
-          mv dist/manifest-firefox.json dist/manifest.json
-
       - name: Create Firefox extension zip
         run: |
+          # Create Firefox-specific manifest (uses scripts array)
+          jq '
+            .background = {"scripts": ["background.js"], "type": "module"}
+          ' public/manifest.json > dist/manifest.json
           cd dist
           zip -r ../qbits-firefox-v${{ steps.version.outputs.version }}.zip .
-
-      - name: Restore Chrome manifest for artifact
-        run: |
-          cp public/manifest.json dist/
 
       - name: Upload Chrome extension artifact
         uses: actions/upload-artifact@v4
