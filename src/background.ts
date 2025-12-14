@@ -35,14 +35,30 @@ function setupDeclarativeNetRequestRules() {
 // Set up rules immediately when service worker starts
 setupDeclarativeNetRequestRules();
 
-// Update badge with current download count
+// Badge colors
+const BADGE_COLOR_SUCCESS = "#6366f1"; // Indigo - for download count
+const BADGE_COLOR_WARNING = "#f59e0b"; // Amber - no settings configured
+const BADGE_COLOR_ERROR = "#ef4444";   // Red - connection error
+
+// Update badge with current download count or status
 async function updateBadge() {
   try {
     const result = await chrome.storage.sync.get(["settings"]);
     const settings = result.settings;
 
-    if (!settings?.serverUrl || !settings?.username || !settings?.password) {
-      chrome.action.setBadgeText({ text: "" });
+    // No server URL configured - show warning badge
+    if (!settings?.serverUrl) {
+      chrome.action.setBadgeText({ text: "?" });
+      chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_WARNING });
+      chrome.action.setTitle({ title: "qBits - No server configured" });
+      return;
+    }
+
+    // Server URL exists but missing credentials - show warning
+    if (!settings?.username || !settings?.password) {
+      chrome.action.setBadgeText({ text: "?" });
+      chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_WARNING });
+      chrome.action.setTitle({ title: "qBits - Missing credentials" });
       return;
     }
 
@@ -55,6 +71,10 @@ async function updateBadge() {
     });
 
     if (!loginResponse.ok) {
+      // Connection failed - show error badge
+      chrome.action.setBadgeText({ text: "!" });
+      chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_ERROR });
+      chrome.action.setTitle({ title: "qBits - Connection failed" });
       return;
     }
 
@@ -70,10 +90,20 @@ async function updateBadge() {
       ).length;
 
       chrome.action.setBadgeText({ text: downloadingCount > 0 ? downloadingCount.toString() : "" });
-      chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
+      chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_SUCCESS });
+      chrome.action.setTitle({ title: downloadingCount > 0 ? `qBits - ${downloadingCount} downloading` : "qBits" });
+    } else {
+      // Failed to get torrents - show error badge
+      chrome.action.setBadgeText({ text: "!" });
+      chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_ERROR });
+      chrome.action.setTitle({ title: "qBits - Failed to fetch torrents" });
     }
   } catch (error) {
     console.error("Error updating badge:", error);
+    // Network or other error - show error badge
+    chrome.action.setBadgeText({ text: "!" });
+    chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_ERROR });
+    chrome.action.setTitle({ title: "qBits - Connection error" });
   }
 }
 
@@ -151,7 +181,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "update-badge") {
     const count = message.count || 0;
     chrome.action.setBadgeText({ text: count > 0 ? count.toString() : "" });
-    chrome.action.setBadgeBackgroundColor({ color: "#6366f1" });
+    chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR_SUCCESS });
     sendResponse({ success: true });
     return true;
   }

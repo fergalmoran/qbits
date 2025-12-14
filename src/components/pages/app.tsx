@@ -19,8 +19,15 @@ interface Alert {
   message: string;
 }
 
+const defaultSettings: Settings = {
+  serverUrl: "",
+  username: "",
+  password: "",
+  notifications: true,
+};
+
 function App() {
-  const [settings, setSettings] = useState<Settings>();
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
 
   const [alert, setAlert] = useState<Alert | null>(null);
 
@@ -182,7 +189,7 @@ function App() {
             <div
               className={`mt-4 p-3 rounded-lg flex items-center gap-3 text-sm ${
                 alert.type === "success"
-                  ? "bg-primary/10 text-primary border border-primary/20"
+                  ? "bg-success/10 text-success border border-success/20"
                   : alert.type === "error"
                   ? "bg-destructive/10 text-destructive border border-destructive/20"
                   : "bg-accent text-accent-foreground border border-border"

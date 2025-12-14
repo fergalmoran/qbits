@@ -63,6 +63,7 @@ get_version() {
 
 # Increment version number
 # Usage: increment_version [major|minor|patch]
+# Outputs: new version string to stdout, logs to stderr
 increment_version() {
     local bump_type="${1:-patch}"
     local current_version
@@ -97,6 +98,7 @@ increment_version() {
     jq --arg v "$new_version" '.version = $v' "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp"
     mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
     
+    # Return only the version string (no logging here - caller should log)
     echo "$new_version"
 }
 
@@ -105,10 +107,12 @@ build_extension() {
     log_info "Building extension..."
     cd "$PROJECT_ROOT"
     
+    # Build with BROWSER=firefox to skip manifest transformation
+    # (build script will handle manifest for each browser separately)
     if command -v bun &> /dev/null; then
-        bun run build
+        BROWSER=firefox bun run build
     else
-        npm run build
+        BROWSER=firefox npm run build
     fi
 }
 
@@ -174,9 +178,15 @@ do_release() {
         exit 1
     fi
     
+    # Get current version before incrementing
+    local old_version
+    old_version=$(get_version)
+    
     # Increment version
     local new_version
     new_version=$(increment_version "$bump_type")
+    
+    log_info "Updating version: $old_version -> $new_version"
     
     # Build both extensions
     build_extension
