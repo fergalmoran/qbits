@@ -107,10 +107,30 @@ jobs:
     # Publish on tag push OR when manually triggered with publish_firefox=true
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event.inputs.publish_firefox == 'true'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download Firefox extension artifact
         uses: actions/download-artifact@v4
         with:
           name: firefox-extension
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log --pretty=format:"• %s" "$PREV_TAG"..HEAD --no-merges | head -20)
+          else
+            NOTES="Initial release"
+          fi
+          # Handle multi-line output
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Publish to Firefox Add-ons
         uses: browser-actions/release-firefox-addon@latest
@@ -119,6 +139,7 @@ jobs:
           addon-path: qbits-firefox-v${{ needs.build.outputs.version }}.zip
           auth-api-issuer: ${{ secrets.FIREFOX_API_ISSUER }}
           auth-api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+          release-note: ${{ steps.release_notes.outputs.notes }}
 
   create-release:
     needs: build
