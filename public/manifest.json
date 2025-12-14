@@ -5,7 +5,7 @@
   "description": "Monitor your qBitorrents",
   "browser_specific_settings": {
     "gecko": {
-      "id": "qbits@podnoms.com",
+      "id": "qbits@fergalmoran.com",
       "strict_min_version": "109.0",
       "data_collection_permissions": {
         "required": [
