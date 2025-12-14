@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "qBits",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Monitor your qBitorrents",
   "browser_specific_settings": {
     "gecko": {
@@ -41,7 +41,9 @@
     "https://*/*"
   ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "type": "module"
   },
   "options_page": "index.html"
