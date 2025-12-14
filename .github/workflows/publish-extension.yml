@@ -78,12 +78,12 @@ jobs:
           name: firefox-extension
           path: qbits-firefox-v${{ steps.version.outputs.version }}.zip
 
-  # NOTE: Publishing to stores is disabled while waiting for account verification
-  # Set the workflow_dispatch inputs to true to enable publishing when ready
+  # Publish to Chrome Web Store on tag push or manual trigger
   publish-chrome:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event.inputs.publish_chrome == 'true'
+    # Publish on tag push OR when manually triggered with publish_chrome=true
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event.inputs.publish_chrome == 'true'
     steps:
       - name: Download Chrome extension artifact
         uses: actions/download-artifact@v4
@@ -100,10 +100,12 @@ jobs:
           extension_id: ${{ secrets.CHROME_EXTENSION_ID }}
           zip_file: qbits-chrome-v${{ needs.build.outputs.version }}.zip
 
+  # Publish to Firefox Add-ons on tag push or manual trigger
   publish-firefox:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event.inputs.publish_firefox == 'true'
+    # Publish on tag push OR when manually triggered with publish_firefox=true
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event.inputs.publish_firefox == 'true'
     steps:
       - name: Download Firefox extension artifact
         uses: actions/download-artifact@v4
