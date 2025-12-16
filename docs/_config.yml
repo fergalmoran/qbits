@@ -1,4 +1,4 @@
 title: qBits
 description: A browser extension to monitor and manage your qBittorrent server
 theme: jekyll-theme-minimal
-baseurl: /
+baseurl: ""
