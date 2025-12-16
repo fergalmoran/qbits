@@ -17,7 +17,7 @@ A browser extension to monitor and manage your qBittorrent server.
 
 ## Installation
 
-- [Chrome Web Store](https://chrome.google.com/webstore) (coming soon)
+- [Chrome Web Store](https://chrome.google.com/webstore)
 - [Firefox Add-ons](https://addons.mozilla.org) (coming soon)
 
 ## Links
