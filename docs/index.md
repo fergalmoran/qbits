@@ -7,6 +7,8 @@ title: qBits - qBittorrent Browser Extension
 
 A browser extension to monitor and manage your qBittorrent server.
 
+![qBits Screenshot](images/screenshot.png)
+
 ## Features
 
 - 📊 Monitor active downloads from your browser toolbar

@@ -2,6 +2,8 @@
 
 A browser extension for monitoring your qBittorrent client. Supports both Chrome and Firefox.
 
+![qBits Screenshot](docs/images/screenshot.png)
+
 ## Features
 
 - **Quick Torrent Overview**: View all your torrents at a glance from the browser toolbar popup

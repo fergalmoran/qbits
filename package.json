@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
+    "dev:chrome": "vite build --watch --mode development",
     "dev:firefox": "BROWSER=firefox vite build --watch --mode development",
     "build": "vite build",
     "build:chrome": "./scripts/build.sh chrome",
