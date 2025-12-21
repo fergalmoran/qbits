@@ -19,7 +19,7 @@ function Popup() {
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ hash: string; name: string } | null>(null);
-  const [deleteWithFiles, setDeleteWithFiles] = useState(false);
+  const [deleteWithFiles, setDeleteWithFiles] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = localStorage.getItem("qbits-active-tab");
     return (saved as TabType) || "all";
