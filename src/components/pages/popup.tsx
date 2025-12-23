@@ -4,6 +4,7 @@ import type { Torrent } from "../../types/torrent";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Settings, Download, Upload, Loader2, AlertCircle, Inbox, Pause, Play, Trash2, X } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface SettingsType {
   serverUrl: string;
@@ -287,14 +288,17 @@ function Popup() {
               {downloadingTorrents.length} active
             </span>
           </div>
-          <Button
-            onClick={openSettings}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-card-foreground"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              onClick={openSettings}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-card-foreground"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="flex border-t border-border">
           {tabs.map((tab) => (
