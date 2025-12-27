@@ -28,7 +28,7 @@ const defaultSettings: Settings = {
 
 function App() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-
+  const [version, setVersion] = useState<string>("");
   const [alert, setAlert] = useState<Alert | null>(null);
 
   useEffect(() => {
@@ -39,6 +39,12 @@ function App() {
           setSettings(result.settings as Settings);
         }
       });
+    }
+
+    // Get version from manifest
+    if (typeof chrome !== "undefined" && chrome.runtime) {
+      const manifest = chrome.runtime.getManifest();
+      setVersion(manifest.version);
     }
   }, []);
 
@@ -202,6 +208,12 @@ function App() {
               >
                 <X className="h-4 w-4" />
               </button>
+            </div>
+          )}
+
+          {version && (
+            <div className="pt-4 text-center text-xs text-muted-foreground">
+              v{version}
             </div>
           )}
         </CardContent>
