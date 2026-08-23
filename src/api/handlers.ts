@@ -64,13 +64,13 @@ async function handleLogin(payload: APIPayload): Promise<APIResponse<string>> {
     });
 
     const responseText = await response.text();
-    
-    // qBittorrent API quirk: login always returns 200
-    // Success is indicated by:
-    // 1. Response body is "Ok."
-    // 2. Set-Cookie header contains SID
-    // We check the response body since we can't reliably access Set-Cookie
-    const loginSuccess = responseText === "Ok.";
+
+    // qBittorrent's login response format is inconsistent across versions:
+    // older builds return 200 with body "Ok."/"Fails.", newer builds return
+    // proper HTTP status codes (e.g. 204 on success, 401 on bad credentials)
+    // with an empty or different body. Treat any 2xx status as success unless
+    // the legacy "Fails." body is present.
+    const loginSuccess = response.ok && responseText !== "Fails.";
 
     if (loginSuccess) {
       // Make another request WITH credentials to establish the session cookie

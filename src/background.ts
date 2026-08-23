@@ -40,6 +40,30 @@ const BADGE_COLOR_SUCCESS = "#6366f1"; // Indigo - for download count
 const BADGE_COLOR_WARNING = "#f59e0b"; // Amber - no settings configured
 const BADGE_COLOR_ERROR = "#ef4444";   // Red - connection error
 
+const COMPLETED_STATES = new Set(["uploading", "pausedUP", "queuedUP", "stalledUP", "forcedUP"]);
+
+function isCompleted(state: string): boolean {
+  return COMPLETED_STATES.has(state);
+}
+
+function notifyCompleted(name: string) {
+  chrome.notifications.create({
+    type: "basic",
+    iconUrl: "icon-128.png",
+    title: "Download complete",
+    message: name,
+  });
+}
+
+async function getPreviousStates(): Promise<Record<string, string>> {
+  const result = await chrome.storage.local.get(["torrentStates"]);
+  return result.torrentStates ?? {};
+}
+
+async function savePreviousStates(states: Record<string, string>): Promise<void> {
+  await chrome.storage.local.set({ torrentStates: states });
+}
+
 // Update badge with current download count or status
 async function updateBadge() {
   try {
@@ -85,7 +109,27 @@ async function updateBadge() {
     });
 
     if (torrentsResponse.ok && Array.isArray(torrentsResponse.body)) {
-      const downloadingCount = torrentsResponse.body.filter(
+      const torrents: any[] = torrentsResponse.body;
+
+      // Check for newly completed torrents
+      const prevStates = await getPreviousStates();
+      const nextStates: Record<string, string> = {};
+      if (settings.notifications !== false) {
+        for (const torrent of torrents) {
+          const prev = prevStates[torrent.hash];
+          if (prev !== undefined && !isCompleted(prev) && isCompleted(torrent.state)) {
+            notifyCompleted(torrent.name);
+          }
+          nextStates[torrent.hash] = torrent.state;
+        }
+      } else {
+        for (const torrent of torrents) {
+          nextStates[torrent.hash] = torrent.state;
+        }
+      }
+      await savePreviousStates(nextStates);
+
+      const downloadingCount = torrents.filter(
         (t: any) => t.state.includes("downloading") || t.state.includes("DL")
       ).length;
 
@@ -117,9 +161,15 @@ chrome.runtime.onInstalled.addListener(() => {
   // Set up declarativeNetRequest rules
   setupDeclarativeNetRequestRules();
 
-  // Start badge update interval
+  // Use alarms instead of setInterval — alarms survive service worker restarts
+  chrome.alarms.create("updateBadge", { periodInMinutes: 1 / 12 }); // every 5 seconds
   updateBadge();
-  setInterval(updateBadge, 5000); // Update every 5 seconds
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "updateBadge") {
+    updateBadge();
+  }
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, _tab) => {

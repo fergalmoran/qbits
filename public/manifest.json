@@ -32,8 +32,10 @@
     "default_popup": "popup.html"
   },
   "permissions": [
+    "alarms",
     "contextMenus",
     "storage",
+    "notifications",
     "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
