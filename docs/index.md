@@ -11,7 +11,7 @@ A browser extension to monitor and manage your qBittorrent server.
 
 ## Features
 
-- 📊 Monitor123 active downloads from your browser toolbar
+- 📊 Monitor active downloads from your browser toolbar
 - ➕ Add torrents via right-click context menu
 - 🔔 Badge notifications for download counts
 - 🌙 Dark mode support

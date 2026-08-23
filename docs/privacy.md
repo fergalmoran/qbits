@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Privacy Policy - qBits
+permalink: /privacy/
 ---
 
 # Privacy Policy for qBits
